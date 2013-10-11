@@ -5,6 +5,7 @@ class YoutopiaRender {
     PImage sourceImage;
 
     float cycle = 0;
+    int imageTrace = 0;
 
     YoutopiaRender() {
       
@@ -13,7 +14,6 @@ class YoutopiaRender {
     public void setup() {
         size(240, 240, P2D);
         frameRate(120);
-
 
         registry = new DeviceRegistry();
         testObserver = new TestObserver();
@@ -43,7 +43,6 @@ class YoutopiaRender {
 
         boolean xSquare, ySquare;
 
-
         for (int y = 0; y < cloudtex.height; y++) {
             yScale = (float)y/cloudtex.height;
             yPix = sin(yScale * pi);
@@ -56,7 +55,6 @@ class YoutopiaRender {
                 xPix = (xScale);
 
                 xSrc = (int)map(xPix, 0, 1, 0, sourceImage.width-1);
-                //ySrc = (int)(yPix*sourceImage.height);
 
                 ySrc = (int)map(-yPix, -1, 1, 0, sourceImage.height-1);
 
@@ -68,38 +66,64 @@ class YoutopiaRender {
         }
         cloudtex.updatePixels();
 
-        cycle += 20;
+        cycle += 5;
+    }
+
+    void renderTest() {
+        cloudtex.loadPixels();
+
+        for (int y = 0; y < cloudtex.height; y++) {
+
+
+            for (int x = 0; x < cloudtex.width; x++) {
+                float xOffsetted = (x + cycle) % cloudtex.width;
+
+
+                int offset = 0;
+
+                cloudtex.pixels[y * cloudtex.width + x] = sourceImage.pixels[offset];
+
+            }
+        }
+        cloudtex.updatePixels();
     }
 
     void display() {
 
         //background(0);
         image(cloudtex, 0, 0);
+        color c;
 
         if (testObserver.hasStrips) {
             registry.startPushing();
             registry.setAutoThrottle(true);
-            int stripy = 0;
+            int stripNum = 0;
             List<Strip> strips = registry.getStrips();
 
             if (strips.size() > 0) {
                 int yscale = height / strips.size();
                 for(Strip strip : strips) {
-                    int xscale = width / strip.getLength();
-                    for (int stripx = 0; stripx < strip.getLength(); stripx++) {
-                        color c = get(stripx*xscale, stripy*yscale);
+                    int stripLength = strip.getLength();
+                    int xscale = width / stripLength;
+                    for (int stripY = 0; stripY < stripLength; stripY++) {
 
-                        if (stripy == 1) {
-                            strip.setPixel(c, strip.getLength() - stripx);
-                        } else {
-                            strip.setPixel(c, stripx);
+                        // interlace the pixel between the strips
+                        if (stripY % 2 == 0) {  // even led
+                            c = get(imageTrace, stripY*yscale);
+                        } else {    // odd led
+                            c = get(imageTrace, stripY*yscale + 1);
                         }
-                    }
-                    stripy++;
 
+                        strip.setPixel(c, stripY);
+                    }
+                    stripNum++;
                 }
             }
         }
+        imageTrace++;
+
+        if (imageTrace > width - 1) imageTrace = 0;
     }
 
 }
+

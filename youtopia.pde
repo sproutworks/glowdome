@@ -27,7 +27,6 @@ void setup() {
   sketch.setup();
 }
 
-
 void draw()  {
 
     sketch.render();
