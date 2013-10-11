@@ -29,6 +29,19 @@ void setup() {
 
 void draw()  {
 
+  if (keyPressed) {
+     if( key == 'w' || key == 'W') {
+         sketch.speed += 0.2; 
+     } else if (key == 's' || key == 'S') {
+        sketch.speed -= 0.2; 
+     } else if (key == 'p') {
+       sketch.stripeWidth++;
+     }
+     else if (key == 'l') {
+       sketch.stripeWidth--;
+     }
+     if (sketch.stripeWidth < 2) sketch.stripeWidth = 2;  
+  }
     sketch.render();
     sketch.display();
 }
