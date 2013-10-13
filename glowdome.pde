@@ -5,7 +5,6 @@ import com.heroicrobot.dropbit.devices.pixelpusher.Pixel;
 import com.heroicrobot.dropbit.devices.pixelpusher.Strip;
 import java.util.*;
 
-import de.voidplus.leapmotion.*;
 
 DeviceRegistry registry;
 
@@ -25,6 +24,7 @@ class TestObserver implements Observer {
 void setup() {
   sketch = new YoutopiaRender();
   sketch.setup();
+  //sketch.loadMovie(this);
 }
 
 void draw()  {
@@ -44,6 +44,10 @@ void draw()  {
   }
     sketch.render();
     sketch.display();
+}
+
+void movieEvent(Movie m) {
+  m.read();
 }
 
 

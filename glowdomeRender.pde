@@ -1,3 +1,5 @@
+import processing.video.*;
+
 class YoutopiaRender {
     TestObserver testObserver;
 
@@ -10,6 +12,9 @@ class YoutopiaRender {
     int traceSpeed = 1;
     
     int stripeWidth = 4;
+    
+    boolean loadedMovie = false;
+    Movie mov;
 
     YoutopiaRender() {
       
@@ -20,17 +25,20 @@ class YoutopiaRender {
         frameRate(60);
         colorMode(RGB, 255);
 
-
         registry = new DeviceRegistry();
         testObserver = new TestObserver();
         registry.addObserver(testObserver);
 
-        
         cloudtex = loadImage("crosshatch.jpg");
         sourceImage = loadImage("mountain2.jpg");
         
     }
-
+    
+    public void loadMovie(PApplet sketch) {
+        mov = new Movie(sketch, "transit.mov");
+        mov.loop();
+    }
+    
     void render() {
 
         //cloudtex = createImage(512, 256);
@@ -87,6 +95,9 @@ class YoutopiaRender {
       cycle += speed;
     }
 
+    /**
+     * Render a test pattern
+     */
     void renderTest() {
         cloudtex.loadPixels();
 
@@ -110,6 +121,12 @@ class YoutopiaRender {
         cycle += speed;
         
         image(cloudtex, 0, 0);
+    }
+
+    void renderMovie() {
+
+        image(mov, 0, 0); 
+      
     }
 
     void display() {
