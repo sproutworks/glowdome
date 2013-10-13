@@ -8,7 +8,7 @@ import java.util.*;
 
 DeviceRegistry registry;
 
-YoutopiaRender sketch;
+GlowdomeRender sketch;
 
 class TestObserver implements Observer {
     public boolean hasStrips = false;
@@ -22,7 +22,7 @@ class TestObserver implements Observer {
 }
 
 void setup() {
-  sketch = new YoutopiaRender();
+  sketch = new GlowdomeRender();
   sketch.setup();
   //sketch.loadMovie(this);
 }

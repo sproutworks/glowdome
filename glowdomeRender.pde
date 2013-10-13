@@ -1,9 +1,9 @@
 import processing.video.*;
 
-class YoutopiaRender {
+class GlowdomeRender {
     TestObserver testObserver;
 
-    PImage cloudtex;
+    PImage backgroundImage;
     PImage sourceImage;
 
     float cycle = 0;
@@ -13,10 +13,12 @@ class YoutopiaRender {
     
     int stripeWidth = 4;
     
+    int saturationAdjust = 0;
+    
     boolean loadedMovie = false;
     Movie mov;
 
-    YoutopiaRender() {
+    GlowdomeRender() {
       
     }
 
@@ -29,7 +31,7 @@ class YoutopiaRender {
         testObserver = new TestObserver();
         registry.addObserver(testObserver);
 
-        cloudtex = loadImage("crosshatch.jpg");
+        backgroundImage = loadImage("crosshatch.jpg");
         sourceImage = loadImage("mountain2.jpg");
         
     }
@@ -51,46 +53,65 @@ class YoutopiaRender {
 
         int red;
         int green;
+        
+        color pixel;
 
         float pi = 3.14159;
+        
+        int srcRowOffset;    // offset in pixels to the current row of the source image
+        int destRowOffset;  
 
         boolean xSquare, ySquare;
     
-        for (int y = 0; y < cloudtex.height; y++) {
-            yScale = (float)y/cloudtex.height;
+        colorMode(HSB, 255);
+    
+        for (int y = 0; y < backgroundImage.height; y++) {
+            yScale = (float)y / backgroundImage.height;
             //yPix = sin(yScale * pi + pi/2);
             yPix = yScale;
-            for (int x = 0; x < cloudtex.width; x++) {
-                float xOffsetted = (x + cycle) % cloudtex.width;
+            ySrc = (int)map(yPix, 0, 1, 0, sourceImage.height - 1);
+            srcRowOffset = (int)ySrc * sourceImage.width;
+            destRowOffset = y * backgroundImage.width;
+            for (int x = 0; x < backgroundImage.width; x++) {
+                float xOffsetted = (x + cycle) % backgroundImage.width;
 
-                xScale = (float)xOffsetted/cloudtex.width;
+                xScale = (float)xOffsetted / backgroundImage.width;
 
                 xPix = (xScale);                
 
-                xSrc = (int)map(xPix, 0, 1, 0, sourceImage.width-1);
-
-               // print (xSrc + " ");
-
-                ySrc = (int)map(yPix, 0, 1, 0, sourceImage.height-1);
+                xSrc = (int)map(xPix, 0, 1, 0, sourceImage.width - 1);
 
                 //ySrc = y;
 
-                int offset = (int)(ySrc * sourceImage.width + xSrc);
+                int offset = (int)(srcRowOffset + xSrc);
 
-                cloudtex.pixels[y * cloudtex.width + x] = sourceImage.pixels[offset];
+                pixel = sourceImage.pixels[offset];
+                
+                if (saturationAdjust != 0) {
+                  float saturation = saturation(pixel);
+                  saturation += saturationAdjust;
+                  if (saturation > 255) saturation = 255;
+                  
+                  pixel = color(hue(pixel), saturation, brightness(pixel));
+                }
+
+                backgroundImage.pixels[destRowOffset + x] = pixel;
 
             }
         }
-        cloudtex.updatePixels();
+        
+        backgroundImage.updatePixels();
           
-        image(cloudtex, 0, 0, 240, 240);
+        image(backgroundImage, 0, 0, 240, 240);
         
         cycle += speed;
+        
+        colorMode(RGB, 255);
     }
     
     void renderImage() {
-      image(sourceImage, cycle % cloudtex.width - cloudtex.width, 0, 240, 240);
-      image(sourceImage, cycle % cloudtex.width, 0, 240, 240);
+      image(sourceImage, cycle % backgroundImage.width - backgroundImage.width, 0, 240, 240);
+      image(sourceImage, cycle % backgroundImage.width, 0, 240, 240);
       
       cycle += speed;
     }
@@ -99,12 +120,12 @@ class YoutopiaRender {
      * Render a test pattern
      */
     void renderTest() {
-        cloudtex.loadPixels();
+        backgroundImage.loadPixels();
 
-        for (int y = 0; y <cloudtex.height; y++) {
+        for (int y = 0; y < backgroundImage.height; y++) {
 
-            for (int x = 0; x < cloudtex.width; x++) {
-                float xOffsetted = (x + cycle) % cloudtex.width;
+            for (int x = 0; x < backgroundImage.width; x++) {
+                float xOffsetted = (x + cycle) % backgroundImage.width;
 
                 int offset = 0;
 
@@ -113,14 +134,14 @@ class YoutopiaRender {
                 int green = stripe % stripeWidth < stripeWidth/2 ? 255 : 0;
                 int blue = (int)(x * 2) % 255;
 
-                cloudtex.pixels[y * cloudtex.width + x] = color(0, green, blue);
+                backgroundImage.pixels[y * backgroundImage.width + x] = color(0, green, blue);
 
             }
         }
-        cloudtex.updatePixels();
+        backgroundImage.updatePixels();
         cycle += speed;
         
-        image(cloudtex, 0, 0);
+        image(backgroundImage, 0, 0);
     }
 
     void renderMovie() {
