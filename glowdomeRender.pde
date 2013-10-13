@@ -23,8 +23,6 @@ class GlowdomeRender {
     }
 
     public void setup() {
-        size(240, 240, P2D);
-        frameRate(60);
         colorMode(RGB, 255);
 
         registry = new DeviceRegistry();
@@ -33,7 +31,6 @@ class GlowdomeRender {
 
         backgroundImage = loadImage("crosshatch.jpg");
         sourceImage = loadImage("mountain2.jpg");
-        
     }
     
     public void loadMovie(PApplet sketch) {
@@ -119,7 +116,7 @@ class GlowdomeRender {
     /**
      * Render a test pattern
      */
-    void renderTest() {
+    void renderTest(PVector v1) {
         backgroundImage.loadPixels();
 
         for (int y = 0; y < backgroundImage.height; y++) {
@@ -140,6 +137,7 @@ class GlowdomeRender {
         }
         backgroundImage.updatePixels();
         cycle += speed;
+        cycle = v1.x;
         
         image(backgroundImage, 0, 0);
     }
