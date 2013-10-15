@@ -33,7 +33,7 @@ class TestObserver implements Observer {
 }
 
 void setup() {
-  size(240, 240, P2D);
+  size(480, 480, P2D);
   if (useKinect) {
     kinect = new Kinect(this);
     tracker = new KinectTracker(); 

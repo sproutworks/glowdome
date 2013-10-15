@@ -22,9 +22,14 @@ class GlowdomeRender {
     // kinect variables
     int kw = 640;
     int kh = 480;
-    int threshold = 950;
+    int threshold = 1150;
     
+    // point cloud
     int[] depth;
+    
+    float[] depthLookUp = new float[2048];
+    
+    float a = 0;
 
     GlowdomeRender() {
       
@@ -42,6 +47,17 @@ class GlowdomeRender {
         kinectImage = createImage(kw, kh, RGB);
         //backgroundImage = loadImage("crosshatch.jpg");
         sourceImage = loadImage("mountain2.jpg");
+        
+       
+        kinect.enableDepth(true);
+        // We don't need the grayscale image in this example
+        // so this makes it more efficient
+        kinect.processDepthImage(false);
+        
+        // Lookup table for all possible depth values (0 - 2047)
+        for (int i = 0; i < depthLookUp.length; i++) {
+          depthLookUp[i] = rawDepthToMeters(i);
+        }
     }
     
     public void loadMovie(PApplet sketch) {
@@ -110,7 +126,7 @@ class GlowdomeRender {
         
         backgroundImage.updatePixels();
           
-        image(backgroundImage, 0, 0, 240, 240);
+        image(backgroundImage, 0, 0, width, height);
         
         cycle += speed;
         
@@ -174,14 +190,14 @@ class GlowdomeRender {
     
     void renderText() {
       fill(255, 0, 0);
-      textSize(45); 
-      text("GlowDome", 0, 60); 
+      textSize(80); 
+      text("GlowDome", 0, height/2); 
     }
     
     void renderConsole() {
-      textSize(15);
+      textSize(25);
       fill(255, 0, 0);
-      text(traceSpeed, 0, 200); 
+      text(traceSpeed, 20, height - 30); 
     }
     
     void renderKinect() {
@@ -221,21 +237,66 @@ class GlowdomeRender {
           }
         }
       }
-    kinectImage.updatePixels();
-
-    avgDepth /= kw * kh;
-    
-    int depthPixel = (int)map(avgDepth, 0, 2000, 0, 255);
-    
-    //print(depthPixel +  " ");
-    
-    fill(depthPixel);
-    //rect(0, 0, width, height);
-
-    // Draw the image
-    //image(kinectImage,0,0, width, height);
-    blend(kinectImage, 0, 0, 640, 480, 0, 0, width, height, ADD);   
+      kinectImage.updatePixels();
+  
+      avgDepth /= kw * kh;
       
+      int depthPixel = (int)map(avgDepth, 0, 2000, 0, 255);
+      
+      //print(depthPixel +  " ");
+      
+      fill(depthPixel);
+      //rect(0, 0, width, height);
+  
+      // Draw the image
+      //image(kinectImage,0,0, width, height);
+      blend(kinectImage, 0, 0, 640, 480, 0, 0, width, height, ADD);   
+      
+    }
+    
+    void renderPointCloud() {
+
+      background(0);
+      fill(255);
+      colorMode(HSB);
+      //textMode(SCREEN);
+      //text("Kinect FR: " + (int)kinect.getDepthFPS() + "\nProcessing FR: " + (int)frameRate,10,16);
+    
+      // Get the raw depth as array of integers
+      int[] depth = kinect.getRawDepth();
+    
+      // We're just going to calculate and draw every 4th pixel (equivalent of 160x120)
+      int skip = 5;
+    
+      // Translate and rotate
+      translate(width/2,height/2,-50);
+      rotateY(a);
+    
+      for(int x=0; x< kw; x+=skip) {
+        for(int y=0; y< kh; y+=skip) {
+          int offset = x+y * kw;
+    
+          // Convert kinect data to world xyz coordinate
+          int rawDepth = depth[offset];
+          PVector v = depthToWorld(x,y,rawDepth);
+    
+          //print(rawDepth + " ");
+    
+          int hue = (int)map(rawDepth, 500, 2100, 0, 255);
+    
+          stroke(hue, 200, 220);
+          pushMatrix();
+          // Scale up by 200
+          float factor = 200;
+          translate(v.x*factor,v.y*factor,factor-v.z*factor);
+          // Draw a point
+          point(0,0);
+          popMatrix();
+        }
+      }
+    
+      // Rotate
+      a += 0.015f;
     }
 
     void display() {
@@ -255,14 +316,15 @@ class GlowdomeRender {
                 for(Strip strip : strips) {
                     int stripLength = strip.getLength();
                     int xscale = width / stripLength;
+                    yscale = height / stripLength;
                     for (int stripY = 0; stripY < stripLength; stripY++) {
 
                         // interlace the pixel between the strips
                         if (stripY % 2 == stripNum) {  // even led
-                            c = get(imageTrace, stripY * 2);
+                            c = get(imageTrace, stripY*yscale);
                             //c = color(255,0,0);
                         } else {    // odd led
-                            c = get(imageTrace, stripY * 2 + 1);
+                            c = get(imageTrace, stripY*yscale + 1);
                         }
                         //print(stripY);
 
@@ -277,5 +339,28 @@ class GlowdomeRender {
         if (imageTrace > width - 1) imageTrace = 0;
     }
 
+
+  // These functions come from: http://graphics.stanford.edu/~mdfisher/Kinect.html
+float rawDepthToMeters(int depthValue) {
+  if (depthValue < 2047) {
+    return (float)(1.0 / ((double)(depthValue) * -0.0030711016 + 3.3309495161));
+  }
+  return 0.0f;
+}
+
+  PVector depthToWorld(int x, int y, int depthValue) {
+  
+    final double fx_d = 1.0 / 5.9421434211923247e+02;
+    final double fy_d = 1.0 / 5.9104053696870778e+02;
+    final double cx_d = 3.3930780975300314e+02;
+    final double cy_d = 2.4273913761751615e+02;
+  
+    PVector result = new PVector();
+    double depth =  depthLookUp[depthValue];//rawDepthToMeters(depthValue);
+    result.x = (float)((x - cx_d) * depth * fx_d);
+    result.y = (float)((y - cy_d) * depth * fy_d);
+    result.z = (float)(depth);
+    return result;
+  }
 }
 
