@@ -60,6 +60,19 @@ void draw()  {
         drawMode++;
         if (drawMode > 2) drawMode = 1; 
      }
+     
+     switch(key) {
+       case 'z':
+        sketch.traceSpeed--;
+      
+        break;
+       case 'x':
+        sketch.traceSpeed++;
+      
+        break; 
+       
+     }
+     
      if (sketch.stripeWidth < 2) sketch.stripeWidth = 2;  
   }
  
@@ -78,9 +91,14 @@ void draw()  {
      sketch.renderTest(v1);  
     break; 
   }
+  
+  sketch.renderText();
+  //sketch.renderRects();
+   
     
   if (useKinect) {
     tracker.track();
+    sketch.renderKinect(); 
     //tracker.display();    
   }
   

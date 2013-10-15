@@ -3,6 +3,7 @@ import processing.video.*;
 class GlowdomeRender {
     TestObserver testObserver;
 
+    PImage kinectImage;
     PImage backgroundImage;
     PImage sourceImage;
 
@@ -17,6 +18,13 @@ class GlowdomeRender {
     
     boolean loadedMovie = false;
     Movie mov;
+    
+    // kinect variables
+    int kw = 640;
+    int kh = 480;
+    int threshold = 950;
+    
+    int[] depth;
 
     GlowdomeRender() {
       
@@ -29,7 +37,10 @@ class GlowdomeRender {
         testObserver = new TestObserver();
         registry.addObserver(testObserver);
 
-        backgroundImage = loadImage("crosshatch.jpg");
+
+        backgroundImage = createImage(width, height, RGB);
+        kinectImage = createImage(kw, kh, RGB);
+        //backgroundImage = loadImage("crosshatch.jpg");
         sourceImage = loadImage("mountain2.jpg");
     }
     
@@ -112,6 +123,8 @@ class GlowdomeRender {
       
       cycle += speed;
     }
+    
+
 
     /**
      * Render a test pattern
@@ -132,7 +145,6 @@ class GlowdomeRender {
                 int blue = (int)(x * 2) % 255;
 
                 backgroundImage.pixels[y * backgroundImage.width + x] = color(0, green, blue);
-
             }
         }
         backgroundImage.updatePixels();
@@ -147,9 +159,89 @@ class GlowdomeRender {
         image(mov, 0, 0); 
       
     }
+    
+    void renderRects() {
+      randomSeed(0);
+      fill(0, 255, 0);
+      int rectHeight;
+      for (int i=0; i < width; i++) {
+        rectHeight = (int)random(0, height);
+        rect(i, 0, 1, rectHeight);
+      
+      }  
+      
+    }
+    
+    void renderText() {
+      fill(255, 0, 0);
+      textSize(45); 
+      text("GlowDome", 0, 60); 
+    }
+    
+    void renderConsole() {
+      textSize(15);
+      fill(255, 0, 0);
+      text(traceSpeed, 0, 200); 
+    }
+    
+    void renderKinect() {
+      PImage img = kinect.getVideoImage();
+     
+      
+      kinectImage.loadPixels();
+      
+      float avgDepth = 0;
+    
+      for(int x = 0; x < kw; x++) {
+        for(int y = 0; y < kh; y++) {
+          // mirroring image
+          int offset = kw-x-1+y*kw;
+          // Raw depth
+          int rawDepth = tracker.depth[offset];
+  
+          avgDepth += rawDepth;
+  
+          int pix = x+y*kinectImage.width;
+          if (rawDepth < threshold) {
+            //colourful twin
+            colorMode (HSB);
+            //kinectImage.pixels[pix] = color(200, 250, 0);
+            kinectImage.pixels[pix] = color(rawDepth%360,250,150);
+            //println (rawDepth);
+          } 
+          else {
+            //creating the mirrored world
+            colorMode (RGB);
+            float r = red (img.pixels[pix]);
+            float g = green (img.pixels[pix]);
+            float b = blue (img.pixels[pix]);
+  
+            color c = color (r, g, b);
+            kinectImage.pixels[pix] = c;
+          }
+        }
+      }
+    kinectImage.updatePixels();
+
+    avgDepth /= kw * kh;
+    
+    int depthPixel = (int)map(avgDepth, 0, 2000, 0, 255);
+    
+    //print(depthPixel +  " ");
+    
+    fill(depthPixel);
+    //rect(0, 0, width, height);
+
+    // Draw the image
+    //image(kinectImage,0,0, width, height);
+    blend(kinectImage, 0, 0, 640, 480, 0, 0, width, height, ADD);   
+      
+    }
 
     void display() {
 
+        renderConsole();
+      
         color c;
         
         if (testObserver.hasStrips) {
