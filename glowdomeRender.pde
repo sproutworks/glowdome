@@ -46,18 +46,35 @@ class GlowdomeRender {
         backgroundImage = createImage(width, height, RGB);
         kinectImage = createImage(kw, kh, RGB);
         //backgroundImage = loadImage("crosshatch.jpg");
-        sourceImage = loadImage("mountain2.jpg");
+        sourceImage = loadImage("stripes.png");
         
-       
-        kinect.enableDepth(true);
-        // We don't need the grayscale image in this example
-        // so this makes it more efficient
-        kinect.processDepthImage(false);
-        
-        // Lookup table for all possible depth values (0 - 2047)
-        for (int i = 0; i < depthLookUp.length; i++) {
-          depthLookUp[i] = rawDepthToMeters(i);
+        if (useKinect) {
+           kinect.enableDepth(true);
+          // We don't need the grayscale image in this example
+          // so this makes it more efficient
+          kinect.processDepthImage(false);
+          
+          // Lookup table for all possible depth values (0 - 2047)
+          for (int i = 0; i < depthLookUp.length; i++) {
+            depthLookUp[i] = rawDepthToMeters(i);
+          }
         }
+       
+    }
+
+    private void loadImages() {
+//      values = loadJSONArray("data.json");
+//
+//      for (int i = 0; i < values.size(); i++) {
+//        
+//        JSONObject animal = values.getJSONObject(i); 
+//
+//        int id = animal.getInt("id");
+//        String species = animal.getString("species");
+//        String name = animal.getString("name");
+//
+//        println(id + ", " + species + ", " + name);
+//      }
     }
     
     public void loadMovie(PApplet sketch) {
@@ -127,9 +144,7 @@ class GlowdomeRender {
         backgroundImage.updatePixels();
           
         image(backgroundImage, 0, 0, width, height);
-        
-        cycle += speed;
-        
+                
         colorMode(RGB, 255);
     }
     
@@ -137,7 +152,6 @@ class GlowdomeRender {
       image(sourceImage, cycle % backgroundImage.width - backgroundImage.width, 0, 240, 240);
       image(sourceImage, cycle % backgroundImage.width, 0, 240, 240);
       
-      cycle += speed;
     }
     
 
@@ -255,7 +269,7 @@ class GlowdomeRender {
     }
     
     void renderPointCloud() {
-
+      
       background(0);
       fill(255);
       colorMode(HSB);
@@ -266,7 +280,7 @@ class GlowdomeRender {
       int[] depth = kinect.getRawDepth();
     
       // We're just going to calculate and draw every 4th pixel (equivalent of 160x120)
-      int skip = 5;
+      int skip = 3;
     
       // Translate and rotate
       translate(width/2,height/2,-50);
@@ -284,7 +298,7 @@ class GlowdomeRender {
     
           int hue = (int)map(rawDepth, 500, 2100, 0, 255);
     
-          stroke(hue, 200, 220);
+          stroke(200, 200, 220);
           pushMatrix();
           // Scale up by 200
           float factor = 200;
@@ -297,6 +311,35 @@ class GlowdomeRender {
     
       // Rotate
       a += 0.015f;
+    }
+
+    void renderNoise(PVector v1) {
+      float noiseScale = .10;
+      
+      for (int y = 0; y < backgroundImage.height; y++) {
+            
+            int destRowOffset = y * backgroundImage.width;
+            for (int x = 0; x < backgroundImage.width; x++) {
+                float xOffsetted = (x + cycle) % backgroundImage.width;
+
+                //xScale = (float)xOffsetted / backgroundImage.width;
+
+                //xPix = (xScale);                 
+
+                int noiseR = (int)(noise((float)(x + v1.x) * noiseScale, (float)(y + v1.y) * noiseScale) * 250);
+                //int noiseG = (int)(noise((float)(x + cycle) * noiseScale * 2, (float)y * noiseScale) * 250);
+                //int noiseB = (int)(noise((float)(x + cycle) * noiseScale * 2, (float)(y + cycle) * noiseScale) * 250);
+
+                color pixel = color(noiseR, 100, 200);
+
+                backgroundImage.pixels[destRowOffset + x] = pixel;
+
+            }
+        }
+        
+        backgroundImage.updatePixels();
+          
+        image(backgroundImage, 0, 0, width, height);
     }
 
     void display() {
@@ -337,6 +380,8 @@ class GlowdomeRender {
         imageTrace += traceSpeed;
 
         if (imageTrace > width - 1) imageTrace = 0;
+        
+        cycle += speed;
     }
 
 

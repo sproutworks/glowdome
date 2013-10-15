@@ -18,6 +18,7 @@ KinectTracker tracker;
 Kinect kinect;
 
 int drawMode = 1;
+int numModes = 4;
 
 boolean useKinect = true;
 
@@ -33,7 +34,8 @@ class TestObserver implements Observer {
 }
 
 void setup() {
-  size(480, 480, P2D);
+  size(480, 480, P3D);
+  frameRate(400);
   if (useKinect) {
     kinect = new Kinect(this);
     tracker = new KinectTracker(); 
@@ -56,15 +58,14 @@ void draw()  {
      }
      else if (key == 'l') {
        sketch.stripeWidth--;
-     } else if (key == 't') {
-        drawMode++;
-        if (drawMode > 2) drawMode = 1; 
      }
      
      switch(key) {
+       
        case 'z':
         sketch.traceSpeed--;
-      
+        if (sketch.traceSpeed < 0)
+          sketch.traceSpeed = 0;
         break;
        case 'x':
         sketch.traceSpeed++;
@@ -90,6 +91,12 @@ void draw()  {
     case 2:
      sketch.renderTest(v1);  
     break; 
+    case 3:
+      sketch.renderNoise(v1);
+      break;
+    case 4:
+      sketch.renderPointCloud();
+      break;
   }
   
   sketch.renderText();
@@ -104,6 +111,16 @@ void draw()  {
   
   sketch.display();
  
+}
+
+void keyPressed() {
+  switch(key) {
+    case 't':
+       drawMode++;
+        if (drawMode > numModes) drawMode = 1; 
+      break;
+    
+  }
 }
 
 void movieEvent(Movie m) {
