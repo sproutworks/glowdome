@@ -7,8 +7,11 @@ import com.heroicrobot.dropbit.registry.*;
 import com.heroicrobot.dropbit.devices.pixelpusher.Pixel;
 import com.heroicrobot.dropbit.devices.pixelpusher.Strip;
 
-import com.onformative.leap.LeapMotionP5;
-import com.leapmotion.leap.Finger;
+//import com.onformative.leap.LeapMotionP5;
+//import com.leapmotion.leap.Finger;
+
+import de.voidplus.leapmotion.*;
+
 
 import java.util.*;
 

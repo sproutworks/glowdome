@@ -1,7 +1,12 @@
+import processing.core.PVector;
 import processing.video.*;
 
 import org.openkinect.*;
 import org.openkinect.processing.*;
+
+import shapes3d.utils.*;
+import shapes3d.animation.*;
+import shapes3d.*;
 
 class GlowdomeRender {
     TestObserver testObserver;
@@ -11,7 +16,9 @@ class GlowdomeRender {
 
     KinectTracker tracker;
 
-    LeapMotionP5 leap;
+    //LeapMotionP5 leap;
+    
+    LeapMotion leap;
 
     PApplet thisApplet;
 
@@ -20,7 +27,7 @@ class GlowdomeRender {
     PImage sourceImage;
 
     int renderMode = 0;
-    int numModes = 4;
+    int numModes = 5;
 
     float cycle = 0;
     float speed = 1;
@@ -45,6 +52,12 @@ class GlowdomeRender {
     float[] depthLookUp = new float[2048];
 
     float a = 0;
+    
+    // 3d stuff
+    
+    Ellipsoid earth;
+    
+    PVector prevAverage;
 
     GlowdomeRender(PApplet applet, boolean kinect, boolean leap) {
         useKinect = kinect;
@@ -64,7 +77,7 @@ class GlowdomeRender {
         sourceImage = loadImage("stripes.png");
 
         if (useLeap) {
-            leap = new LeapMotionP5(thisApplet);
+            leap = new LeapMotion(thisApplet);
         }
 
         if (useKinect) {
@@ -80,6 +93,22 @@ class GlowdomeRender {
                 depthLookUp[i] = rawDepthToMeters(i);
             }
         }
+        
+        setup3D();
+    }
+    
+    public void setup3D() {
+      earth = new Ellipsoid(thisApplet, 16, 16);
+      earth.setTexture("earth.jpg");
+      earth.setRadius(180);
+      earth.moveTo(new PVector(0, 0, 0));
+      earth.strokeWeight(1.0f);
+      earth.stroke(color(255, 255, 0));
+      earth.moveTo(20, 40, -80);
+      earth.tag = "Earth";
+      earth.drawMode(Shape3D.TEXTURE);
+      
+      prevAverage = new PVector(0, 0, 0);
     }
 
     public void stop() {
@@ -121,12 +150,12 @@ class GlowdomeRender {
 
         int fingerNum = 0;
         leapVectors = new PVector[10];
-        for (Finger finger : leap.getFingerList()) {
-
-            leapVectors[fingerNum] = leap.getTip(finger);
-
-            //ellipse(fingerPos.x, fingerPos.y, 10, 10);
+        
+        for (Hand hand : leap.getHands()) {
+          leapVectors[fingerNum++] = hand.getStabilizedPosition();
         }
+
+        background(0);
 
         switch(drawMode) {
             case 1:
@@ -140,6 +169,9 @@ class GlowdomeRender {
                 break;
             case 4:
                 renderPointCloud();
+                break;
+            case 5:
+                renderSphere(leapVectors);
                 break;
         }
 
@@ -323,13 +355,12 @@ class GlowdomeRender {
 
         // Draw the image
         //image(kinectImage,0,0, width, height);
-        blend(kinectImage, 0, 0, 640, 480, 0, 0, width, height, ADD);
+        blend(kinectImage, 0, 0, 640, 480, 0, 0, width, height, LIGHTEST);
 
     }
 
     void renderPointCloud() {
 
-        background(0);
         fill(255);
         colorMode(HSB);
         //textMode(SCREEN);
@@ -412,6 +443,40 @@ class GlowdomeRender {
         image(backgroundImage, 0, 0, width, height);
     }
 
+    void renderSphere(PVector [] fingers) {
+
+        PVector average = averageVectors(fingers);
+       
+        pushStyle();
+        
+        float angle = 0;
+        float yAngle = 0;
+        if (!Double.isNaN(average.x)) {
+           angle = average.x - prevAverage.x;
+           yAngle = -(average.y - prevAverage.y);
+           
+           prevAverage.x = average.x;
+           prevAverage.y = average.y;
+        }
+        
+        // Change the rotations before drawing
+        earth.rotateBy(radians(yAngle), radians(angle), 0);
+      
+        background(0);
+        pushMatrix();
+        camera(0, -190, 350, 0, 0, 0, 0, 1, 0);
+        lights();
+      
+        // Draw the earth (will cause all added shapes
+        // to be drawn i.e. the moon)
+        earth.draw();
+      
+        //stars.draw();
+        popMatrix();
+        popStyle();
+
+    }
+
     void display() {
 
         color c;
@@ -480,6 +545,22 @@ class GlowdomeRender {
         result.y = (float)((y - cy_d) * depth * fy_d);
         result.z = (float)(depth);
         return result;
+    }
+
+    PVector averageVectors(PVector [] vectors) {
+        PVector average = new PVector();
+        int fingerCount = 0;
+        float fingerAvg = 0;
+        for(PVector finger : vectors) {
+            if (finger == null) break;
+            fingerCount++;
+            average.x += finger.x;
+            average.y += finger.y;
+        }
+        average.x /= fingerCount;
+        average.y /= fingerCount;
+
+        return average;
     }
 }
 
