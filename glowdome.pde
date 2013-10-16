@@ -105,5 +105,28 @@ void stop() {
 }
 
 
+void leapOnSwipeGesture(SwipeGesture g, int state){
+    int     id                  = g.getId();
+    Finger  finger              = g.getFinger();
+    PVector position            = g.getPosition();
+    PVector position_start      = g.getStartPosition();
+    PVector direction           = g.getDirection();
+    float   speed               = g.getSpeed();
+    long    duration            = g.getDuration();
+    float   duration_seconds    = g.getDurationInSeconds();
+
+    switch(state){
+        case 1: // Start
+            break;
+        case 2: // Update
+            break;
+        case 3: // Stop
+            println("SwipeGesture: "+id);
+            sketch.cycleMode();
+            break;
+    }
+}
+
+
 
 

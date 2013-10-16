@@ -77,7 +77,7 @@ class GlowdomeRender {
         sourceImage = loadImage("stripes.png");
 
         if (useLeap) {
-            leap = new LeapMotion(thisApplet);
+            leap = new LeapMotion(thisApplet).withGestures();
         }
 
         if (useKinect) {
