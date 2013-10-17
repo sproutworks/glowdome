@@ -7,9 +7,6 @@ import com.heroicrobot.dropbit.registry.*;
 import com.heroicrobot.dropbit.devices.pixelpusher.Pixel;
 import com.heroicrobot.dropbit.devices.pixelpusher.Strip;
 
-//import com.onformative.leap.LeapMotionP5;
-//import com.leapmotion.leap.Finger;
-
 import de.voidplus.leapmotion.*;
 
 
@@ -22,9 +19,6 @@ DeviceRegistry registry;
 
 GlowdomeRender sketch;
 
-
-int drawMode = 1;
-int numModes = 4;
 
 boolean useKinect = true;
 boolean useLeap = true;
@@ -44,7 +38,6 @@ class TestObserver implements Observer {
 void setup() {
     size(480, 480, P3D);
     frameRate(400);
-
 
     sketch = new GlowdomeRender(this, useKinect, useLeap);
     sketch.setup();
@@ -89,9 +82,17 @@ void draw()  {
 
 void keyPressed() {
     switch(key) {
+       
         case 't':
-            sketch.cycleMode();
+            //sketch.cycleMode();
             break;
+        case '0':
+            sketch.clearLayers();
+            break;
+    }
+    
+    if (key >= '1' && key <= '9') {
+       sketch.toggleLayer(key - '0'); 
     }
 }
 
@@ -122,7 +123,7 @@ void leapOnSwipeGesture(SwipeGesture g, int state){
             break;
         case 3: // Stop
             println("SwipeGesture: "+id);
-            sketch.cycleMode();
+            //sketch.cycleMode();
             break;
     }
 }

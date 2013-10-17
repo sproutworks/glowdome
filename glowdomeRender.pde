@@ -16,8 +16,6 @@ class GlowdomeRender {
 
     KinectTracker tracker;
 
-    //LeapMotionP5 leap;
-    
     LeapMotion leap;
 
     PApplet thisApplet;
@@ -27,14 +25,15 @@ class GlowdomeRender {
     PImage sourceImage;
 
     int renderMode = 0;
-    int numModes = 5;
+    int numModes = 6;
+    boolean [] layerStatus;
 
     float cycle = 0;
     float speed = 1;
-    int imageTrace = 0;
-    int traceSpeed = 1;
+    float imageTrace = 0;
+    float traceSpeed = 1;  // how many pixels to skip each frame, adjust for motor speed
 
-    int stripeWidth = 4;
+    int stripeWidth = 10;
 
     int saturationAdjust = 0;
 
@@ -63,6 +62,15 @@ class GlowdomeRender {
         useKinect = kinect;
         useLeap = leap;
         thisApplet = applet;
+        layerStatus = new boolean[10];
+        
+        // turn all layers off
+        for (boolean currentStatus : layerStatus) {
+          currentStatus = false;
+        }
+        
+        layerStatus[1] = true;
+          
     }
 
     public void setup() {
@@ -157,29 +165,42 @@ class GlowdomeRender {
 
         background(0);
 
-        switch(drawMode) {
-            case 1:
-                renderPicture();
-                break;
-            case 2:
-                renderTest(kinectVector);
-                break;
-            case 3:
-                renderNoise(kinectVector, leapVectors);
-                break;
-            case 4:
-                renderPointCloud();
-                break;
-            case 5:
-                renderSphere(leapVectors);
-                break;
-        }
-
+        int currentLayer;
+        
         if (useKinect) {
-            tracker.track();
-            renderKinect();
-            //tracker.display();
+          tracker.track();
         }
+        
+        for (currentLayer=0; currentLayer <= numModes; currentLayer++) {
+          if (layerStatus[currentLayer] == true) {
+            switch(currentLayer) {
+              case 6:
+                  if (useKinect) {
+                    
+                    renderKinect();
+                    //tracker.display();
+                  }
+                  break;
+                case 1:
+                  renderPicture();
+                  break;
+              case 2:
+                  renderTest(kinectVector);
+                  break;
+              case 3:
+                  renderNoise(kinectVector, leapVectors);
+                  break;
+              case 4:
+                  renderPointCloud();
+                  break;
+              case 5:
+                  renderSphere(leapVectors);
+                  break;
+            
+            }
+           
+          } 
+        } 
 
         renderConsole();
     }
@@ -237,7 +258,8 @@ class GlowdomeRender {
 
         backgroundImage.updatePixels();
 
-        image(backgroundImage, 0, 0, width, height);
+        //image(backgroundImage, 0, 0, width, height);
+        blend(backgroundImage, 0, 0, width, height, 0, 0, width, height, LIGHTEST);
 
         colorMode(RGB, 255);
     }
@@ -272,7 +294,8 @@ class GlowdomeRender {
         cycle += speed;
         cycle = v1.x;
 
-        image(backgroundImage, 0, 0);
+        //image(backgroundImage, 0, 0);
+        blend(backgroundImage, 0, 0, width, height, 0, 0, width, height, LIGHTEST);
     }
 
     void renderMovie() {
@@ -290,7 +313,6 @@ class GlowdomeRender {
             rect(i, 0, 1, rectHeight);
 
         }
-
     }
 
     void renderText() {
@@ -361,7 +383,7 @@ class GlowdomeRender {
 
     void renderPointCloud() {
 
-        fill(255);
+        //fill(255);
         colorMode(HSB);
         //textMode(SCREEN);
         //text("Kinect FR: " + (int)kinect.getDepthFPS() + "\nProcessing FR: " + (int)frameRate,10,16);
@@ -439,8 +461,9 @@ class GlowdomeRender {
         }
 
         backgroundImage.updatePixels();
-
-        image(backgroundImage, 0, 0, width, height);
+        
+        blend(backgroundImage, 0, 0, width, height, 0, 0, width, height, LIGHTEST);
+        //image(backgroundImage, 0, 0, width, height);
     }
 
     void renderSphere(PVector [] fingers) {
@@ -462,7 +485,7 @@ class GlowdomeRender {
         // Change the rotations before drawing
         earth.rotateBy(radians(yAngle), radians(angle), 0);
       
-        background(0);
+        //background(0);
         pushMatrix();
         camera(0, -190, 350, 0, 0, 0, 0, 1, 0);
         lights();
@@ -497,10 +520,10 @@ class GlowdomeRender {
 
                         // interlace the pixel between the strips
                         if (stripY % 2 == stripNum) {  // even led
-                            c = get(imageTrace, stripY*yscale);
+                            c = get((int)imageTrace, stripY*yscale);
                             //c = color(255,0,0);
                         } else {    // odd led
-                            c = get(imageTrace, stripY*yscale + 1);
+                            c = get((int)imageTrace, stripY*yscale + 1);
                         }
                         //print(stripY);
 
@@ -518,9 +541,14 @@ class GlowdomeRender {
     }
 
 
-    public void cycleMode() {
-        drawMode++;
-        if (drawMode > numModes) drawMode = 1;
+    public void toggleLayer(int layerNum) {
+        layerStatus[layerNum] = !layerStatus[layerNum];
+    }
+    
+    public void clearLayers() {
+         for (int layerNum = 0; layerNum <= numModes; layerNum++) {
+            layerStatus[layerNum] = false;
+         } 
     }
 
 
