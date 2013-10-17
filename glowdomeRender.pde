@@ -25,7 +25,7 @@ class GlowdomeRender {
     PImage sourceImage;
 
     int renderMode = 0;
-    int numModes = 6;
+    int numModes = 7;
     boolean [] layerStatus;
 
     float cycle = 0;
@@ -36,6 +36,7 @@ class GlowdomeRender {
     int stripeWidth = 10;
 
     int saturationAdjust = 0;
+    int hueShift;
 
     boolean loadedMovie = false;
     Movie mov;
@@ -82,7 +83,7 @@ class GlowdomeRender {
 
         backgroundImage = createImage(width, height, RGB);
         kinectImage = createImage(kw, kh, RGB);
-        sourceImage = loadImage("stripes.png");
+        sourceImage = loadImage("mountain2.png");
 
         if (useLeap) {
             leap = new LeapMotion(thisApplet).withGestures();
@@ -107,7 +108,7 @@ class GlowdomeRender {
     
     public void setup3D() {
       earth = new Ellipsoid(thisApplet, 16, 16);
-      earth.setTexture("earth.jpg");
+      earth.setTexture("pattern3.png");
       earth.setRadius(180);
       earth.moveTo(new PVector(0, 0, 0));
       earth.strokeWeight(1.0f);
@@ -126,7 +127,7 @@ class GlowdomeRender {
     }
 
     private void loadImages() {
-//      values = loadJSONArray("data.json");
+      JSONArray values = loadJSONArray("images.json");
 //
 //      for (int i = 0; i < values.size(); i++) {
 //        
@@ -195,6 +196,9 @@ class GlowdomeRender {
                   break;
               case 5:
                   renderSphere(leapVectors);
+                  break;
+              case 7:
+                  renderRings();
                   break;
             
             }
@@ -314,6 +318,19 @@ class GlowdomeRender {
 
         }
     }
+    
+    void renderRings() {
+      stroke(255, 0, 0);
+      strokeWeight(10);
+      line(0, 0, width, height); 
+      
+      stroke(0, 255, 0);
+      line(width/4, height, width/2, 0);
+      
+      stroke(0, 0, 255);
+      line(width, 0, 0, height);
+      
+    }
 
     void renderText() {
         fill(255, 0, 0);
@@ -385,6 +402,7 @@ class GlowdomeRender {
 
         //fill(255);
         colorMode(HSB);
+        strokeWeight(1);
         //textMode(SCREEN);
         //text("Kinect FR: " + (int)kinect.getDepthFPS() + "\nProcessing FR: " + (int)frameRate,10,16);
 
@@ -453,7 +471,7 @@ class GlowdomeRender {
                 //int noiseG = (int)(noise((float)(x + cycle) * noiseScale * 2, (float)y * noiseScale) * 250);
                 //int noiseB = (int)(noise((float)(x + cycle) * noiseScale * 2, (float)(y + cycle) * noiseScale) * 250);
 
-                color pixel = color(noiseR, red, 200);
+                color pixel = color(noiseR, red, 0);
 
                 backgroundImage.pixels[destRowOffset + x] = pixel;
 
@@ -525,7 +543,6 @@ class GlowdomeRender {
                         } else {    // odd led
                             c = get((int)imageTrace, stripY*yscale + 1);
                         }
-                        //print(stripY);
 
                         strip.setPixel(c, stripLength - stripY);
                     }

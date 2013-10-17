@@ -61,12 +61,12 @@ void draw()  {
         switch(key) {
 
             case 'z':
-                sketch.traceSpeed--;
+                sketch.traceSpeed -= 0.1;
                 if (sketch.traceSpeed < 0)
                     sketch.traceSpeed = 0;
                 break;
             case 'x':
-                sketch.traceSpeed++;
+                sketch.traceSpeed += 0.1;
 
                 break;
         }
