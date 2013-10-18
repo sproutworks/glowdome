@@ -45,6 +45,10 @@ class GlowdomeRender {
     float xSpeed = 1;
     float ySpeed = 0;
 
+    int lastMillis = millis();
+    int cycleMillis = millis();  // the last time the image was cycled
+    int handsMillis = millis();
+
     float imageTrace = 0;  // which column of pixels we are currently sending to the strips
     float traceSpeed = 1;  // how many pixels to skip each frame, adjust for motor speed
 
@@ -73,6 +77,7 @@ class GlowdomeRender {
     Ellipsoid earth;
     
     PVector prevAverage;
+    PVector handsDelta;
 
     GlowdomeRender(PApplet applet, boolean kinect, boolean leap) {
         useKinect = kinect;
@@ -197,11 +202,20 @@ class GlowdomeRender {
             kinectVector = new PVector(0, 0);
         }
 
-        int fingerNum = 0;
+        int handHum = 0;
         leapVectors = new PVector[10];
         
-        for (Hand hand : leap.getHands()) {
-          leapVectors[fingerNum++] = hand.getStabilizedPosition();
+        if (useLeap) {
+            for (Hand hand : leap.getHands()) {
+                leapVectors[handHum++] = hand.getStabilizedPosition();
+            }
+            updateDeltaVector(leapVectors);
+        }
+        
+        if ((handsDelta.x > 0|| handsDelta.y > 0) && handsMillis - millis() < 2000) {
+          xSpeed = handsDelta.x;
+          ySpeed = handsDelta.y;
+          handsMillis = millis();
         }
 
         background(0);
@@ -223,7 +237,7 @@ class GlowdomeRender {
                       }
                       break;
                   case 1:
-                      renderPicture();
+                      renderPicture(leapVectors);
                       break;
                   case 2:
                       renderTest(kinectVector);
@@ -235,7 +249,7 @@ class GlowdomeRender {
                       renderPointCloud();
                       break;
                   case 5:
-                      renderSphere(leapVectors);
+                      renderSphere();
                       break;
                   case 7:
                       renderRings();
@@ -251,7 +265,7 @@ class GlowdomeRender {
     /*
         Draw an image, handle shifting in x,y directions
      */
-    void renderPicture() {
+    void renderPicture(PVector [] hands) {
 
         float xScale, yScale;
         float xPix, yPix;
@@ -268,6 +282,13 @@ class GlowdomeRender {
         int destRowOffset;
 
         boolean xSquare, ySquare;
+
+        int curMillis = millis();
+        
+        if (curMillis - cycleMillis > 1000) {
+           cycleImage();
+            cycleMillis = curMillis; 
+        }
 
         colorMode(HSB, 255);
 
@@ -524,26 +545,12 @@ class GlowdomeRender {
     /*
         Render a sphere, control with leap
      */
-    void renderSphere(PVector [] fingers) {
+    void renderSphere() {
 
-        PVector average = averageVectors(fingers);
-       
         pushStyle();
         
-        float angle = 0;
-        float yAngle = 0;
-
-        // we need to check if there is actually a hand here, if not, just use last position
-        if (!Double.isNaN(average.x)) {
-           angle = average.x - prevAverage.x;
-           yAngle = -(average.y - prevAverage.y);
-           
-           prevAverage.x = average.x;
-           prevAverage.y = average.y;
-        }
-        
         // Change the rotations before drawing
-        earth.rotateBy(radians(yAngle), radians(angle), 0);
+        earth.rotateBy(radians(handsDelta.y), radians(handsDelta.x), 0);
       
         //background(0);
         pushMatrix();
@@ -635,6 +642,24 @@ class GlowdomeRender {
         yCycle = 0;
     }
 
+    private void updateDeltaVector(PVector [] hands) {
+      PVector average = averageVectors(hands);
+
+        float xDelta, yDelta;
+
+        if (!Double.isNaN(average.x)) {
+            xDelta = average.x - prevAverage.x;
+            yDelta = -(average.y - prevAverage.y);
+
+            prevAverage.x = average.x;
+            prevAverage.y = average.y;
+        } else {
+             xDelta = 0;
+             yDelta = 0; 
+        }
+        handsDelta = new PVector(xDelta, yDelta);
+      
+    }
 
     // These functions come from: http://graphics.stanford.edu/~mdfisher/Kinect.html
     float rawDepthToMeters(int depthValue) {
