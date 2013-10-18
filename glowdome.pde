@@ -1,4 +1,27 @@
-//import SimpleOpenNI.*;
+/*
+
+    Glow Dome
+
+    Keys Used:
+
+    w,s: adjust speed in x direction (image layer only)
+    e,d: adjust speed in y direction
+    p,l: adjust stripe width in stripe layer
+    o: reset speed to zero in image layer
+    z,x: adjust trace speed, for adjusting POV timing
+    i: cycle image used in image layer
+
+    number keys: toggle layers
+    1: image
+    2: stripes
+    3: perlin noise
+    4: kinect point cloud
+    5: sphere
+    6: kinect
+
+
+ */
+
 
 import org.openkinect.*;
 import org.openkinect.processing.*;
@@ -9,16 +32,13 @@ import com.heroicrobot.dropbit.devices.pixelpusher.Strip;
 
 import de.voidplus.leapmotion.*;
 
-
 import java.util.*;
 
 Kinect kinect;
 
-
 DeviceRegistry registry;
 
 GlowdomeRender sketch;
-
 
 boolean useKinect = true;
 boolean useLeap = true;
@@ -44,22 +64,39 @@ void setup() {
     //sketch.loadMovie(this);
 }
 
+/*
+    Main draw function pass to sketch object for the actual rendering.
+    Handle key presses when we need to detect which keys are held down.
+ */
 void draw()  {
 
+    float speedIncrement = 0.2;
+  
     if (keyPressed) {
-        if( key == 'w' || key == 'W') {
-            sketch.speed += 0.2;
-        } else if (key == 's' || key == 'S') {
-            sketch.speed -= 0.2;
-        } else if (key == 'p') {
-            sketch.stripeWidth++;
-        }
-        else if (key == 'l') {
-            sketch.stripeWidth--;
-        }
 
         switch(key) {
-
+            // adjust speed in x
+            case 'w':
+                sketch.xSpeed += speedIncrement;
+                break;
+            case 's':
+                sketch.xSpeed -= speedIncrement;
+                break;
+            // adjust speed in y
+            case 'e':
+                sketch.ySpeed += speedIncrement;
+                break;
+            case 'd':
+                sketch.ySpeed -= speedIncrement;
+                break;
+            // adjust stripe width
+            case 'p':
+                sketch.stripeWidth++;
+                break;
+            case 'l':
+                sketch.stripeWidth--;
+                break;
+            // adjust trace speed
             case 'z':
                 sketch.traceSpeed -= 0.1;
                 if (sketch.traceSpeed < 0)
@@ -75,24 +112,35 @@ void draw()  {
     }
 
     sketch.render();
-
     sketch.display();
 
 }
 
+
+/*
+    Handle a key press when holding key down is not needed
+ */
 void keyPressed() {
     switch(key) {
-       
-        case 't':
-            //sketch.cycleMode();
+        case 'i':
+            sketch.cycleImage();
+            break;
+        case 'o':
+            sketch.resetSpeed();
             break;
         case '0':
             sketch.clearLayers();
+            break;
+        case RETURN:
+        case ENTER:
+            sketch.toggleTextEntry();
             break;
     }
     
     if (key >= '1' && key <= '9') {
        sketch.toggleLayer(key - '0'); 
+    } else if (sketch.textEntry && key >= 'a' && key <= 'z') {
+        sketch.sendKey(key);
     }
 }
 

@@ -20,17 +20,32 @@ class GlowdomeRender {
 
     PApplet thisApplet;
 
-    PImage kinectImage;
+    PImage kinectImage;         // kinect is drawn into this
     PImage backgroundImage;
     PImage sourceImage;
+
+    PImage currentImage;
+
+    String [] imageFiles;
+    int currentImageNum;
 
     int renderMode = 0;
     int numModes = 7;
     boolean [] layerStatus;
 
-    float cycle = 0;
-    float speed = 1;
-    float imageTrace = 0;
+    boolean textEntry = false;
+    String textString = "";
+
+    PFont font20;
+    PFont font80;
+
+    float xCycle = 0;
+    float yCycle = 0;
+
+    float xSpeed = 1;
+    float ySpeed = 0;
+
+    float imageTrace = 0;  // which column of pixels we are currently sending to the strips
     float traceSpeed = 1;  // how many pixels to skip each frame, adjust for motor speed
 
     int stripeWidth = 10;
@@ -71,7 +86,6 @@ class GlowdomeRender {
         }
         
         layerStatus[1] = true;
-          
     }
 
     public void setup() {
@@ -103,9 +117,14 @@ class GlowdomeRender {
             }
         }
         
+        setupFonts();
         setup3D();
+        loadImages();
     }
-    
+
+    /*
+        Set up the 3D scene
+     */
     public void setup3D() {
       earth = new Ellipsoid(thisApplet, 16, 16);
       earth.setTexture("pattern3.png");
@@ -119,6 +138,11 @@ class GlowdomeRender {
       
       prevAverage = new PVector(0, 0, 0);
     }
+    
+    public void setupFonts() {
+        font20 = loadFont("SourceCodePro-Regular-20.vlw");
+        font80 = loadFont("SourceCodePro-Regular-80.vlw");
+    }
 
     public void stop() {
         if (useKinect) {
@@ -126,19 +150,32 @@ class GlowdomeRender {
         }
     }
 
+    /*
+        Create an array of image file names
+     */
     private void loadImages() {
-      JSONArray values = loadJSONArray("images.json");
-//
-//      for (int i = 0; i < values.size(); i++) {
-//        
-//        JSONObject animal = values.getJSONObject(i); 
-//
-//        int id = animal.getInt("id");
-//        String species = animal.getString("species");
-//        String name = animal.getString("name");
-//
-//        println(id + ", " + species + ", " + name);
-//      }
+        JSONArray values = loadJSONArray("images.json");
+
+        imageFiles = new String[values.size()];
+
+        for (int i = 0; i < values.size(); i++) {
+
+            JSONObject images = values.getJSONObject(i);
+
+            imageFiles[i] = images.getString("file");
+
+            //println(file);
+        }
+    }
+
+    public void cycleImage() {
+        currentImageNum++;
+
+        if (currentImageNum > imageFiles.length - 1) {
+            currentImageNum = 0;
+        }
+        sourceImage = loadImage(imageFiles[currentImageNum]);
+        println(imageFiles[currentImageNum]);
     }
 
     public void loadMovie(PApplet sketch) {
@@ -146,6 +183,9 @@ class GlowdomeRender {
         mov.loop();
     }
 
+    /*
+    The main render method draws all the layers and console
+     */
     void render() {
 
         PVector kinectVector;
@@ -173,42 +213,44 @@ class GlowdomeRender {
         }
         
         for (currentLayer=0; currentLayer <= numModes; currentLayer++) {
-          if (layerStatus[currentLayer] == true) {
-            switch(currentLayer) {
-              case 6:
-                  if (useKinect) {
-                    
-                    renderKinect();
-                    //tracker.display();
-                  }
-                  break;
-                case 1:
-                  renderPicture();
-                  break;
-              case 2:
-                  renderTest(kinectVector);
-                  break;
-              case 3:
-                  renderNoise(kinectVector, leapVectors);
-                  break;
-              case 4:
-                  renderPointCloud();
-                  break;
-              case 5:
-                  renderSphere(leapVectors);
-                  break;
-              case 7:
-                  renderRings();
-                  break;
-            
+            if (layerStatus[currentLayer] == true) {
+                switch(currentLayer) {
+                  case 6:
+                      if (useKinect) {
+
+                          renderKinect();
+                          //tracker.display();
+                      }
+                      break;
+                  case 1:
+                      renderPicture();
+                      break;
+                  case 2:
+                      renderTest(kinectVector);
+                      break;
+                  case 3:
+                      renderNoise(kinectVector, leapVectors);
+                      break;
+                  case 4:
+                      renderPointCloud();
+                      break;
+                  case 5:
+                      renderSphere(leapVectors);
+                      break;
+                  case 7:
+                      renderRings();
+                      break;
+                }
             }
-           
-          } 
         } 
 
         renderConsole();
+        renderText();
     }
 
+    /*
+        Draw an image, handle shifting in x,y directions
+     */
     void renderPicture() {
 
         float xScale, yScale;
@@ -230,14 +272,15 @@ class GlowdomeRender {
         colorMode(HSB, 255);
 
         for (int y = 0; y < backgroundImage.height; y++) {
-            yScale = (float)y / backgroundImage.height;
+            float yOffsetted = (y + yCycle) % backgroundImage.height;
+            yScale = (float)yOffsetted / backgroundImage.height;
             //yPix = sin(yScale * pi + pi/2);
             yPix = yScale;
             ySrc = (int)map(yPix, 0, 1, 0, sourceImage.height - 1);
             srcRowOffset = (int)ySrc * sourceImage.width;
             destRowOffset = y * backgroundImage.width;
             for (int x = 0; x < backgroundImage.width; x++) {
-                float xOffsetted = (x + cycle) % backgroundImage.width;
+                float xOffsetted = (x + xCycle) % backgroundImage.width;
 
                 xScale = (float)xOffsetted / backgroundImage.width;
 
@@ -268,10 +311,6 @@ class GlowdomeRender {
         colorMode(RGB, 255);
     }
 
-    void renderImage() {
-        image(sourceImage, cycle % backgroundImage.width - backgroundImage.width, 0, 240, 240);
-        image(sourceImage, cycle % backgroundImage.width, 0, 240, 240);
-    }
 
     /**
      * Render a test pattern
@@ -282,11 +321,11 @@ class GlowdomeRender {
         for (int y = 0; y < backgroundImage.height; y++) {
 
             for (int x = 0; x < backgroundImage.width; x++) {
-                float xOffsetted = (x + cycle) % backgroundImage.width;
+                float xOffsetted = (x + xCycle) % backgroundImage.width;
 
                 int offset = 0;
 
-                int stripe = (int)(y + cycle/2);
+                int stripe = (int)(y + xCycle/2);
 
                 int green = stripe % stripeWidth < stripeWidth/2 ? 255 : 0;
                 int blue = (int)(x * 2) % 255;
@@ -295,8 +334,8 @@ class GlowdomeRender {
             }
         }
         backgroundImage.updatePixels();
-        cycle += speed;
-        cycle = v1.x;
+        xCycle += xSpeed;
+        xCycle = v1.x;
 
         //image(backgroundImage, 0, 0);
         blend(backgroundImage, 0, 0, width, height, 0, 0, width, height, LIGHTEST);
@@ -334,19 +373,20 @@ class GlowdomeRender {
 
     void renderText() {
         fill(255, 0, 0);
+        textFont(font80);
         textSize(80);
-        text("GlowDome", 0, height/2);
+        text(textString, 0, height/2);
     }
 
     void renderConsole() {
-        textSize(25);
+        textFont(font20);
+        textSize(20);
         fill(255, 0, 0);
-        text(traceSpeed, 20, height - 30);
+        text("trace " + traceSpeed + " xCycle " + xCycle, 20, height - 30);
     }
 
     void renderKinect() {
         PImage img = kinect.getVideoImage();
-
 
         kinectImage.loadPixels();
 
@@ -365,7 +405,6 @@ class GlowdomeRender {
                 if (rawDepth < threshold) {
                     //colourful twin
                     colorMode (HSB);
-                    //kinectImage.pixels[pix] = color(200, 250, 0);
                     kinectImage.pixels[pix] = color(rawDepth%360,250,150);
                     //println (rawDepth);
                 }
@@ -387,20 +426,15 @@ class GlowdomeRender {
 
         int depthPixel = (int)map(avgDepth, 0, 2000, 0, 255);
 
-        //print(depthPixel +  " ");
-
         fill(depthPixel);
-        //rect(0, 0, width, height);
 
         // Draw the image
         //image(kinectImage,0,0, width, height);
         blend(kinectImage, 0, 0, 640, 480, 0, 0, width, height, LIGHTEST);
-
     }
 
     void renderPointCloud() {
 
-        //fill(255);
         colorMode(HSB);
         strokeWeight(1);
         //textMode(SCREEN);
@@ -413,7 +447,7 @@ class GlowdomeRender {
         int skip = 3;
 
         // Translate and rotate
-        translate(width/2,height/2,-50);
+        translate(width/2, height/2, -50);
         rotateY(a);
 
         for(int x=0; x< kw; x+=skip) {
@@ -443,6 +477,9 @@ class GlowdomeRender {
         a += 0.015f;
     }
 
+    /*
+        Render perlin noise and shift, change color using kinect and leap
+     */
     void renderNoise(PVector v1, PVector [] fingers) {
         float noiseScale = .10;
 
@@ -461,15 +498,15 @@ class GlowdomeRender {
 
             int destRowOffset = y * backgroundImage.width;
             for (int x = 0; x < backgroundImage.width; x++) {
-                float xOffsetted = (x + cycle) % backgroundImage.width;
+                float xOffsetted = (x + xCycle) % backgroundImage.width;
 
                 //xScale = (float)xOffsetted / backgroundImage.width;
 
                 //xPix = (xScale);
 
                 int noiseR = (int)(noise((float)(x + v1.x) * noiseScale, (float)(y + v1.y) * noiseScale) * 250);
-                //int noiseG = (int)(noise((float)(x + cycle) * noiseScale * 2, (float)y * noiseScale) * 250);
-                //int noiseB = (int)(noise((float)(x + cycle) * noiseScale * 2, (float)(y + cycle) * noiseScale) * 250);
+                //int noiseG = (int)(noise((float)(x + xCycle) * noiseScale * 2, (float)y * noiseScale) * 250);
+                //int noiseB = (int)(noise((float)(x + xCycle) * noiseScale * 2, (float)(y + xCycle) * noiseScale) * 250);
 
                 color pixel = color(noiseR, red, 0);
 
@@ -484,6 +521,9 @@ class GlowdomeRender {
         //image(backgroundImage, 0, 0, width, height);
     }
 
+    /*
+        Render a sphere, control with leap
+     */
     void renderSphere(PVector [] fingers) {
 
         PVector average = averageVectors(fingers);
@@ -492,6 +532,8 @@ class GlowdomeRender {
         
         float angle = 0;
         float yAngle = 0;
+
+        // we need to check if there is actually a hand here, if not, just use last position
         if (!Double.isNaN(average.x)) {
            angle = average.x - prevAverage.x;
            yAngle = -(average.y - prevAverage.y);
@@ -518,6 +560,9 @@ class GlowdomeRender {
 
     }
 
+    /*
+        Read the current column of pixels from the final image, send to pixelpusher
+     */
     void display() {
 
         color c;
@@ -554,7 +599,14 @@ class GlowdomeRender {
 
         if (imageTrace > width - 1) imageTrace = 0;
 
-        cycle += speed;
+        // check for cycle going beyond the image
+        xCycle += xSpeed;
+        if (xCycle < 0) xCycle = width + xCycle;
+        if (xCycle > width) xCycle = xCycle - width;
+
+        yCycle += ySpeed;
+        if (yCycle < 0) yCycle = height + yCycle;
+        if (yCycle > height) yCycle = yCycle - height;
     }
 
 
@@ -566,6 +618,21 @@ class GlowdomeRender {
          for (int layerNum = 0; layerNum <= numModes; layerNum++) {
             layerStatus[layerNum] = false;
          } 
+    }
+
+    public void toggleTextEntry() {
+        textEntry = !textEntry;
+    }
+
+    public void sendKey(char key) {
+        textString += key;
+    }
+
+    public void resetSpeed() {
+        xSpeed = 0;
+        ySpeed = 0;
+        xCycle = 0;
+        yCycle = 0;
     }
 
 
