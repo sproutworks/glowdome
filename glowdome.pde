@@ -2,6 +2,20 @@
 
     Glow Dome
 
+    Libraries used:
+    
+    pixelpusher 
+    http://forum.heroicrobotics.com/board/6/updates
+    
+    leap motion for processing 
+    https://github.com/voidplus/leap-motion-processing
+    
+    open kinect
+    http://shiffman.net/p5/kinect/
+    
+    Shapes 3D
+    http://www.lagers.org.uk/s3d4p/index.html
+
     Keys Used:
 
     w,s: adjust speed in x direction (image layer only)
