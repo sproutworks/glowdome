@@ -4,12 +4,12 @@ import processing.video.*;
 import org.openkinect.*;
 import org.openkinect.processing.*;
 
-//import shapes3d.utils.*;
-//import shapes3d.animation.*;
-//import shapes3d.*;
+
 
 class GlowdomeRender {
     TestObserver testObserver;
+
+    Glowdome3d gd3d;
 
     boolean useKinect;
     boolean useLeap;
@@ -73,13 +73,8 @@ class GlowdomeRender {
 
     float a = 0;
     
-    // 3d stuff
-    
-   // Ellipsoid earth;
-    
     PVector prevAverage;
-    PVector handsDelta;
-    
+    PVector handsDelta;   
     
     GlowdomeRender(PApplet applet, boolean kinect, boolean leap) {
         useKinect = kinect;
@@ -128,25 +123,10 @@ class GlowdomeRender {
         }
         
         setupFonts();
-        //setup3D();
+        
+        gd3d = new Glowdome3d();
+        gd3d.setup(thisApplet);
         loadImages();
-    }
-
-    /*
-        Set up the 3D scene
-     */
-    public void setup3D() {
-//      earth = new Ellipsoid(thisApplet, 16, 16);
-//      earth.setTexture("pattern3.png");
-//      earth.setRadius(180);
-//      earth.moveTo(new PVector(0, 0, 0));
-//      earth.strokeWeight(1.0f);
-//      earth.stroke(color(255, 255, 0));
-//      earth.moveTo(20, 40, -80);
-//      earth.tag = "Earth";
-//      earth.drawMode(Shape3D.TEXTURE);
-//      
-//      prevAverage = new PVector(0, 0, 0);
     }
     
     public void setupFonts() {
@@ -247,13 +227,6 @@ class GlowdomeRender {
         for (currentLayer=0; currentLayer <= numModes; currentLayer++) {
             if (layerStatus[currentLayer] == true) {
                 switch(currentLayer) {
-                  case 6:
-                      if (useKinect) {
-
-                          renderKinect();
-                          //tracker.display();
-                      }
-                      break;
                   case 1:
                       renderPicture(leapVectors);
                       break;
@@ -268,6 +241,10 @@ class GlowdomeRender {
                       break;
                   case 5:
                       renderSphere();
+                      break;
+                  case 6:
+                          renderKinect();
+                          //tracker.display();
                       break;
                   case 7:
                       renderRings();
@@ -381,9 +358,7 @@ class GlowdomeRender {
     }
 
     void renderMovie() {
-
         image(mov, 0, 0);
-
     }
 
     void renderRects() {
@@ -393,7 +368,6 @@ class GlowdomeRender {
         for (int i=0; i < width; i++) {
             rectHeight = (int)random(0, height);
             rect(i, 0, 1, rectHeight);
-
         }
     }
     
@@ -425,7 +399,9 @@ class GlowdomeRender {
     }
 
     void renderKinect() {
-        PImage img = kinect.getVideoImage();
+      if (!useKinect) return;  
+      
+      PImage img = kinect.getVideoImage();
 
         kinectImage.loadPixels();
 
@@ -474,6 +450,8 @@ class GlowdomeRender {
 
     void renderPointCloud() {
 
+        if (!useKinect) return;
+      
         colorMode(HSB);
         strokeWeight(1);
         //textMode(SCREEN);
@@ -565,23 +543,7 @@ class GlowdomeRender {
      */
     void renderSphere() {
 
-//        pushStyle();
-//        
-//        // Change the rotations before drawing
-//        earth.rotateBy(radians(handsDelta.y), radians(handsDelta.x), 0);
-//      
-//        //background(0);
-//        pushMatrix();
-//        camera(0, -190, 350, 0, 0, 0, 0, 1, 0);
-//        lights();
-//      
-//        // Draw the earth (will cause all added shapes
-//        // to be drawn i.e. the moon)
-//        earth.draw();
-//      
-//        //stars.draw();
-//        popMatrix();
-//        popStyle();
+      gd3d.render(handsDelta);
 
     }
 
