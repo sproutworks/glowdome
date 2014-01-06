@@ -4,9 +4,9 @@ import processing.video.*;
 import org.openkinect.*;
 import org.openkinect.processing.*;
 
-import shapes3d.utils.*;
-import shapes3d.animation.*;
-import shapes3d.*;
+//import shapes3d.utils.*;
+//import shapes3d.animation.*;
+//import shapes3d.*;
 
 class GlowdomeRender {
     TestObserver testObserver;
@@ -25,6 +25,7 @@ class GlowdomeRender {
     PImage sourceImage;
 
     PImage currentImage;
+    boolean autoCycle = false;
 
     String [] imageFiles;
     int currentImageNum;
@@ -74,17 +75,21 @@ class GlowdomeRender {
     
     // 3d stuff
     
-    Ellipsoid earth;
+   // Ellipsoid earth;
     
     PVector prevAverage;
     PVector handsDelta;
-
+    
+    
     GlowdomeRender(PApplet applet, boolean kinect, boolean leap) {
         useKinect = kinect;
         useLeap = leap;
         thisApplet = applet;
         layerStatus = new boolean[10];
         
+        handsDelta = new PVector(0, 0);
+        prevAverage = new PVector(0, 0);
+               
         // turn all layers off
         for (boolean currentStatus : layerStatus) {
           currentStatus = false;
@@ -123,7 +128,7 @@ class GlowdomeRender {
         }
         
         setupFonts();
-        setup3D();
+        //setup3D();
         loadImages();
     }
 
@@ -131,17 +136,17 @@ class GlowdomeRender {
         Set up the 3D scene
      */
     public void setup3D() {
-      earth = new Ellipsoid(thisApplet, 16, 16);
-      earth.setTexture("pattern3.png");
-      earth.setRadius(180);
-      earth.moveTo(new PVector(0, 0, 0));
-      earth.strokeWeight(1.0f);
-      earth.stroke(color(255, 255, 0));
-      earth.moveTo(20, 40, -80);
-      earth.tag = "Earth";
-      earth.drawMode(Shape3D.TEXTURE);
-      
-      prevAverage = new PVector(0, 0, 0);
+//      earth = new Ellipsoid(thisApplet, 16, 16);
+//      earth.setTexture("pattern3.png");
+//      earth.setRadius(180);
+//      earth.moveTo(new PVector(0, 0, 0));
+//      earth.strokeWeight(1.0f);
+//      earth.stroke(color(255, 255, 0));
+//      earth.moveTo(20, 40, -80);
+//      earth.tag = "Earth";
+//      earth.drawMode(Shape3D.TEXTURE);
+//      
+//      prevAverage = new PVector(0, 0, 0);
     }
     
     public void setupFonts() {
@@ -203,16 +208,29 @@ class GlowdomeRender {
         }
 
         int handHum = 0;
-        leapVectors = new PVector[10];
+        int numHands = 0;
+        leapVectors = new PVector[2];
         
         if (useLeap) {
             for (Hand hand : leap.getHands()) {
                 leapVectors[handHum++] = hand.getStabilizedPosition();
+                numHands++;
+            }
+            
+            // if no hands are present, set a default speed
+            if (numHands == 0) {
+               leapVectors[0] = new PVector(0, 0);
+               leapVectors[1] = new PVector(0, 0);
+               xSpeed = 1;
+               ySpeed = 0;
             }
             updateDeltaVector(leapVectors);
+        } else {
+          leapVectors[0] = new PVector(0,0);
         }
         
-        if ((handsDelta.x > 0|| handsDelta.y > 0) && handsMillis - millis() < 2000) {
+        
+        if ((handsDelta.x > 0 || handsDelta.y > 0) && handsMillis - millis() < 2000) {
           xSpeed = handsDelta.x;
           ySpeed = handsDelta.y;
           handsMillis = millis();
@@ -285,8 +303,8 @@ class GlowdomeRender {
 
         int curMillis = millis();
         
-        if (curMillis - cycleMillis > 1000) {
-           cycleImage();
+        if (autoCycle && curMillis - cycleMillis > 1000) {
+            cycleImage();
             cycleMillis = curMillis; 
         }
 
@@ -380,16 +398,16 @@ class GlowdomeRender {
     }
     
     void renderRings() {
-      stroke(255, 0, 0);
-      strokeWeight(10);
-      line(0, 0, width, height); 
+      int lineSpacing = 30;
       
-      stroke(0, 255, 0);
-      line(width/4, height, width/2, 0);
+     
       
-      stroke(0, 0, 255);
-      line(width, 0, 0, height);
-      
+      for (int lineNum=0; lineNum < 20; lineNum++) {
+        stroke((lineNum * 10) % 255, (lineNum * 10) %255, 0);
+        strokeWeight(10);
+        line(lineNum*lineSpacing, lineNum*lineSpacing, width - lineNum*lineSpacing/2, height - lineNum*lineSpacing);
+        
+      }     
     }
 
     void renderText() {
@@ -547,23 +565,23 @@ class GlowdomeRender {
      */
     void renderSphere() {
 
-        pushStyle();
-        
-        // Change the rotations before drawing
-        earth.rotateBy(radians(handsDelta.y), radians(handsDelta.x), 0);
-      
-        //background(0);
-        pushMatrix();
-        camera(0, -190, 350, 0, 0, 0, 0, 1, 0);
-        lights();
-      
-        // Draw the earth (will cause all added shapes
-        // to be drawn i.e. the moon)
-        earth.draw();
-      
-        //stars.draw();
-        popMatrix();
-        popStyle();
+//        pushStyle();
+//        
+//        // Change the rotations before drawing
+//        earth.rotateBy(radians(handsDelta.y), radians(handsDelta.x), 0);
+//      
+//        //background(0);
+//        pushMatrix();
+//        camera(0, -190, 350, 0, 0, 0, 0, 1, 0);
+//        lights();
+//      
+//        // Draw the earth (will cause all added shapes
+//        // to be drawn i.e. the moon)
+//        earth.draw();
+//      
+//        //stars.draw();
+//        popMatrix();
+//        popStyle();
 
     }
 
@@ -657,7 +675,8 @@ class GlowdomeRender {
              xDelta = 0;
              yDelta = 0; 
         }
-        handsDelta = new PVector(xDelta, yDelta);
+        handsDelta.x = xDelta;
+        handsDelta.y = yDelta;
       
     }
 
@@ -694,8 +713,11 @@ class GlowdomeRender {
             average.x += finger.x;
             average.y += finger.y;
         }
-        average.x /= fingerCount;
-        average.y /= fingerCount;
+        
+        if (fingerCount > 1) {
+          average.x /= fingerCount;
+          average.y /= fingerCount;
+        }
 
         return average;
     }

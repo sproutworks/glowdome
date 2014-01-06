@@ -40,7 +40,7 @@ DeviceRegistry registry;
 
 GlowdomeRender sketch;
 
-boolean useKinect = true;
+boolean useKinect = false;
 boolean useLeap = true;
 
 class TestObserver implements Observer {
