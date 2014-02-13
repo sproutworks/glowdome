@@ -24,6 +24,8 @@ class GlowdomeRender {
     PImage backgroundImage;
     PImage sourceImage;
 
+    PGraphics offscreenBuffer;
+
     PImage currentImage;
     boolean autoCycle = false;
 
@@ -103,6 +105,8 @@ class GlowdomeRender {
         backgroundImage = createImage(width, height, RGB);
         kinectImage = createImage(kw, kh, RGB);
         sourceImage = loadImage("mountain2.png");
+
+        offscreenBuffer = createGraphics(width, height, JAVA2D);
 
         if (useLeap) {
             leap = new LeapMotion(thisApplet).withGestures();
@@ -254,10 +258,12 @@ class GlowdomeRender {
 
         renderConsole();
         renderText();
+
+        //image(offscreenBuffer, 0, 0);
     }
 
-    /*
-        Draw an image, handle shifting in x,y directions
+    /**
+     *   Draw an image, handle shifting in x,y directions
      */
     void renderPicture(PVector [] hands) {
 
@@ -286,6 +292,8 @@ class GlowdomeRender {
 
         colorMode(HSB, 255);
 
+        offscreenBuffer.loadPixels();
+
         for (int y = 0; y < backgroundImage.height; y++) {
             float yOffsetted = (y + yCycle) % backgroundImage.height;
             yScale = (float)yOffsetted / backgroundImage.height;
@@ -313,15 +321,15 @@ class GlowdomeRender {
                     pixel = color(hue(pixel), saturation, brightness(pixel));
                 }
 
-                backgroundImage.pixels[destRowOffset + x] = pixel;
+                offscreenBuffer.pixels[destRowOffset + x] = pixel;
 
             }
         }
 
-        backgroundImage.updatePixels();
+        offscreenBuffer.updatePixels();
 
         //image(backgroundImage, 0, 0, width, height);
-        blend(backgroundImage, 0, 0, width, height, 0, 0, width, height, LIGHTEST);
+        blend(offscreenBuffer, 0, 0, width, height, 0, 0, width, height, LIGHTEST);
 
         colorMode(RGB, 255);
     }
@@ -331,7 +339,7 @@ class GlowdomeRender {
      * Render a test pattern
      */
     void renderTest(PVector v1) {
-        backgroundImage.loadPixels();
+        offscreenBuffer.loadPixels();
 
         for (int y = 0; y < backgroundImage.height; y++) {
 
@@ -341,19 +349,22 @@ class GlowdomeRender {
                 int offset = 0;
 
                 int stripe = (int)(y + xCycle/2);
+                int stripeX = (int)(x + yCycle/2);
 
-                int green = stripe % stripeWidth < stripeWidth/2 ? 255 : 0;
-                int blue = (int)(x * 2) % 255;
+                int inX = stripeX % stripeWidth < stripeWidth/2 ? 1 : 0;
+                int inY = stripe % stripeWidth < stripeWidth/2 ? 1 : 0;
 
-                backgroundImage.pixels[y * backgroundImage.width + x] = color(0, green, blue);
+                int green = inX == 1 && inY == 1 ? 255 : 0;
+                int blue = inX == 0 && inY == 0 ? 255 : 0;
+
+                offscreenBuffer.pixels[y * backgroundImage.width + x] = color(0, green, blue);
             }
         }
-        backgroundImage.updatePixels();
+        offscreenBuffer.updatePixels();
         xCycle += xSpeed;
-        xCycle = v1.x;
 
         //image(backgroundImage, 0, 0);
-        blend(backgroundImage, 0, 0, width, height, 0, 0, width, height, LIGHTEST);
+        blend(offscreenBuffer, 0, 0, width, height, 0, 0, width, height, LIGHTEST);
     }
 
     void renderMovie() {
@@ -373,8 +384,12 @@ class GlowdomeRender {
     void renderRings() {
         int lineSpacing = 30;
 
+        fill(255, 0, 0);
+        ellipse(50, 50, 50, 50);
+
         for (int lineNum=0; lineNum < 20; lineNum++) {
-            stroke((lineNum * 10) % 255, (lineNum * 10) %255, 0);
+
+            stroke(255 - (lineNum * 10), (lineNum * 10) % 255, 0);
             strokeWeight(10);
             line(lineNum*lineSpacing, lineNum*lineSpacing, width - lineNum*lineSpacing/2, height - lineNum*lineSpacing);
         }
@@ -419,7 +434,7 @@ class GlowdomeRender {
                 if (rawDepth < threshold) {
                     //colourful twin
                     colorMode (HSB);
-                    kinectImage.pixels[pix] = color(rawDepth%360,250,150);
+                    kinectImage.pixels[pix] = color(rawDepth % 360, 250, 150);
                     //println (rawDepth);
                 }
                 else {
@@ -567,14 +582,18 @@ class GlowdomeRender {
                     int stripLength = strip.getLength();
                     int xscale = width / stripLength;
                     yscale = height / stripLength;
+
                     for (int stripY = 0; stripY < stripLength; stripY++) {
 
                         // interlace the pixel between the strips
                         if (stripY % 2 == stripNum) {  // even led
                             c = get((int)imageTrace, stripY*yscale);
+                            //c = offscreenBuffer.pixels[(int)imageTrace + stripY*yscale*width];
                             //c = color(255,0,0);
                         } else {    // odd led
                             c = get((int)imageTrace, stripY*yscale + 1);
+                            //c = offscreenBuffer.pixels[(int)imageTrace + ((int)(stripY*yscale) + 1)*width];
+                            //println(stripY*yscale*width);
                         }
 
                         strip.setPixel(c, stripLength - stripY);
