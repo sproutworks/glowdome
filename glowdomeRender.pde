@@ -87,7 +87,7 @@ class GlowdomeRender {
                
         // turn all layers off
         for (boolean currentStatus : layerStatus) {
-          currentStatus = false;
+            currentStatus = false;
         }
         
         layerStatus[1] = true;
@@ -140,8 +140,8 @@ class GlowdomeRender {
         }
     }
 
-    /*
-        Create an array of image file names
+    /**
+     *   Create an array of image file names
      */
     private void loadImages() {
         JSONArray values = loadJSONArray("images.json");
@@ -173,8 +173,8 @@ class GlowdomeRender {
         mov.loop();
     }
 
-    /*
-    The main render method draws all the layers and console
+    /**
+     * The main render method draws all the layers and console
      */
     void render() {
 
@@ -208,8 +208,7 @@ class GlowdomeRender {
         } else {
           leapVectors[0] = new PVector(0,0);
         }
-        
-        
+
         if ((handsDelta.x > 0 || handsDelta.y > 0) && handsMillis - millis() < 2000) {
           xSpeed = handsDelta.x;
           ySpeed = handsDelta.y;
@@ -223,32 +222,32 @@ class GlowdomeRender {
         if (useKinect) {
           tracker.track();
         }
-        
+
         for (currentLayer=0; currentLayer <= numModes; currentLayer++) {
             if (layerStatus[currentLayer] == true) {
                 switch(currentLayer) {
-                  case 1:
-                      renderPicture(leapVectors);
-                      break;
-                  case 2:
-                      renderTest(kinectVector);
-                      break;
-                  case 3:
-                      renderNoise(kinectVector, leapVectors);
-                      break;
-                  case 4:
-                      renderPointCloud();
-                      break;
-                  case 5:
-                      renderSphere();
-                      break;
-                  case 6:
-                          renderKinect();
-                          //tracker.display();
-                      break;
-                  case 7:
-                      renderRings();
-                      break;
+                    case 1:
+                        renderPicture(leapVectors);
+                        break;
+                    case 2:
+                        renderTest(kinectVector);
+                        break;
+                    case 3:
+                        renderNoise(kinectVector, leapVectors);
+                        break;
+                    case 4:
+                        renderPointCloud();
+                        break;
+                    case 5:
+                        renderSphere();
+                        break;
+                    case 6:
+                        renderKinect();
+                        //tracker.display();
+                        break;
+                    case 7:
+                        renderRings();
+                        break;
                 }
             }
         } 
@@ -370,18 +369,15 @@ class GlowdomeRender {
             rect(i, 0, 1, rectHeight);
         }
     }
-    
+
     void renderRings() {
-      int lineSpacing = 30;
-      
-     
-      
-      for (int lineNum=0; lineNum < 20; lineNum++) {
-        stroke((lineNum * 10) % 255, (lineNum * 10) %255, 0);
-        strokeWeight(10);
-        line(lineNum*lineSpacing, lineNum*lineSpacing, width - lineNum*lineSpacing/2, height - lineNum*lineSpacing);
-        
-      }     
+        int lineSpacing = 30;
+
+        for (int lineNum=0; lineNum < 20; lineNum++) {
+            stroke((lineNum * 10) % 255, (lineNum * 10) %255, 0);
+            strokeWeight(10);
+            line(lineNum*lineSpacing, lineNum*lineSpacing, width - lineNum*lineSpacing/2, height - lineNum*lineSpacing);
+        }
     }
 
     void renderText() {
@@ -398,10 +394,13 @@ class GlowdomeRender {
         text("trace " + traceSpeed + " xCycle " + xCycle, 20, height - 30);
     }
 
+    /**
+     * Render kinect
+     */
     void renderKinect() {
-      if (!useKinect) return;  
-      
-      PImage img = kinect.getVideoImage();
+        if (!useKinect) return;
+
+        PImage img = kinect.getVideoImage();
 
         kinectImage.loadPixels();
 
@@ -494,8 +493,10 @@ class GlowdomeRender {
         a += 0.015f;
     }
 
-    /*
-        Render perlin noise and shift, change color using kinect and leap
+    /**
+     * Render perlin noise and shift, change color using kinect and leap
+     * @param PVector v1
+     * @param PVector [] fingers
      */
     void renderNoise(PVector v1, PVector [] fingers) {
         float noiseScale = .10;
@@ -538,7 +539,7 @@ class GlowdomeRender {
         //image(backgroundImage, 0, 0, width, height);
     }
 
-    /*
+    /**
         Render a sphere, control with leap
      */
     void renderSphere() {
@@ -547,7 +548,7 @@ class GlowdomeRender {
 
     }
 
-    /*
+    /**
         Read the current column of pixels from the final image, send to pixelpusher
      */
     void display() {
@@ -596,11 +597,17 @@ class GlowdomeRender {
         if (yCycle > height) yCycle = yCycle - height;
     }
 
-
+    /**
+     * Toggle a layer
+     * @param int layerNum
+     */
     public void toggleLayer(int layerNum) {
         layerStatus[layerNum] = !layerStatus[layerNum];
     }
-    
+
+    /**
+     * Clear layers
+     */
     public void clearLayers() {
          for (int layerNum = 0; layerNum <= numModes; layerNum++) {
             layerStatus[layerNum] = false;
