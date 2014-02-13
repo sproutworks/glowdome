@@ -48,11 +48,15 @@ import de.voidplus.leapmotion.*;
 
 import java.util.*;
 
+import processing.serial.*;
+
 Kinect kinect;
 
 DeviceRegistry registry;
 
 GlowdomeRender sketch;
+
+Serial rpmReader;
 
 boolean useKinect = false;
 boolean useLeap = true;
@@ -75,7 +79,9 @@ void setup() {
 
     sketch = new GlowdomeRender(this, useKinect, useLeap);
     sketch.setup();
-    //sketch.loadMovie(this);
+
+    println(Serial.list());
+    rpmReader = new Serial(this, Serial.list()[0], 9600);
 }
 
 /*
@@ -85,7 +91,7 @@ void setup() {
 void draw()  {
 
     float speedIncrement = 0.2;
-  
+
     if (keyPressed) {
 
         switch(key) {
@@ -162,6 +168,12 @@ void movieEvent(Movie m) {
     m.read();
 }
 
+void serialEvent(Serial port) {
+    int val = port.read();
+
+    println("raw input" + val);
+}
+
 void stop() {
     sketch.stop();
     super.stop();
@@ -184,7 +196,7 @@ void leapOnSwipeGesture(SwipeGesture g, int state){
         case 2: // Update
             break;
         case 3: // Stop
-            println("SwipeGesture: "+id);
+            println("SwipeGesture: " + id);
             //sketch.cycleMode();
             break;
     }
