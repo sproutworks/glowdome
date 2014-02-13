@@ -75,7 +75,7 @@ class TestObserver implements Observer {
 
 void setup() {
     size(480, 480, P3D);
-    frameRate(400);
+    frameRate(120);
 
     sketch = new GlowdomeRender(this, useKinect, useLeap);
     sketch.setup();

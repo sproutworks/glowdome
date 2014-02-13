@@ -37,7 +37,7 @@ class GlowdomeRender {
     boolean [] layerStatus;
 
     boolean textEntry = false;
-    String textString = "";
+    String textString = "HELLO, WORLD";
 
     PFont font20;
     PFont font80;
@@ -246,7 +246,8 @@ class GlowdomeRender {
                         renderSphere();
                         break;
                     case 6:
-                        renderKinect();
+                        renderText();
+                        //renderKinect();
                         //tracker.display();
                         break;
                     case 7:
@@ -257,7 +258,6 @@ class GlowdomeRender {
         } 
 
         renderConsole();
-        renderText();
 
         //image(offscreenBuffer, 0, 0);
     }
@@ -340,7 +340,9 @@ class GlowdomeRender {
      */
     void renderTest(PVector v1) {
         offscreenBuffer.loadPixels();
-
+        int prevX = 0;
+        int inX;
+        int stripeNum = 0;
         for (int y = 0; y < backgroundImage.height; y++) {
 
             for (int x = 0; x < backgroundImage.width; x++) {
@@ -351,13 +353,21 @@ class GlowdomeRender {
                 int stripe = (int)(y + xCycle/2);
                 int stripeX = (int)(x + yCycle/2);
 
-                int inX = stripeX % stripeWidth < stripeWidth/2 ? 1 : 0;
+
+
+                 inX = stripeX % stripeWidth < stripeWidth/2 ? 1 : 0;
                 int inY = stripe % stripeWidth < stripeWidth/2 ? 1 : 0;
 
+                if (prevX != inY) {
+                    stripeNum++;
+                }
+                prevX = inX;
+
+                int red = stripeNum % 2 == 1 ? 255 : 0;
                 int green = inX == 1 && inY == 1 ? 255 : 0;
                 int blue = inX == 0 && inY == 0 ? 255 : 0;
 
-                offscreenBuffer.pixels[y * backgroundImage.width + x] = color(0, green, blue);
+                offscreenBuffer.pixels[y * backgroundImage.width + x] = color(red, green, blue);
             }
         }
         offscreenBuffer.updatePixels();
@@ -382,24 +392,29 @@ class GlowdomeRender {
     }
 
     void renderRings() {
-        int lineSpacing = 30;
-
-        fill(255, 0, 0);
-        ellipse(50, 50, 50, 50);
+        int lineSpacing = 50;
 
         for (int lineNum=0; lineNum < 20; lineNum++) {
-
-            stroke(255 - (lineNum * 10), (lineNum * 10) % 255, 0);
+            int r = 255 - (lineNum * 10);
+            int b = (lineNum * 10) % 255;
+            stroke(r, 0, b);
             strokeWeight(10);
-            line(lineNum*lineSpacing, lineNum*lineSpacing, width - lineNum*lineSpacing/2, height - lineNum*lineSpacing);
+            line(lineNum*lineSpacing,
+                    lineNum*lineSpacing/2,
+                    width - lineNum*lineSpacing/2,
+                    height - lineNum*lineSpacing);
         }
+
+        fill(0, 255, 0);
+        strokeWeight(1);
+        ellipse(50, 150, 50, 50);
     }
 
     void renderText() {
         fill(255, 0, 0);
         textFont(font80);
-        textSize(80);
-        text(textString, 0, height/2);
+        textSize(60);
+        text(textString, 10, height/2);
     }
 
     void renderConsole() {
@@ -604,7 +619,7 @@ class GlowdomeRender {
         }
         imageTrace += traceSpeed;
 
-        if (imageTrace > width - 1) imageTrace = 0;
+        if (imageTrace > width - 1) imageTrace = imageTrace - width;
 
         // check for cycle going beyond the image
         xCycle += xSpeed;
@@ -622,6 +637,7 @@ class GlowdomeRender {
      */
     public void toggleLayer(int layerNum) {
         layerStatus[layerNum] = !layerStatus[layerNum];
+        println(layerNum);
     }
 
     /**
