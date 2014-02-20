@@ -29,7 +29,7 @@ class GlowdomeRender {
     PImage currentImage;
     boolean autoCycle = false;
 
-    String [] imageFiles;
+    File [] imageFiles;
     int currentImageNum;
 
     int renderMode = 0;
@@ -102,6 +102,10 @@ class GlowdomeRender {
         testObserver = new TestObserver();
         registry.addObserver(testObserver);
 
+
+        registry.startPushing();
+        registry.setAutoThrottle(true);
+
         backgroundImage = createImage(width, height, RGB);
         kinectImage = createImage(kw, kh, RGB);
         sourceImage = loadImage("mountain2.png");
@@ -134,8 +138,8 @@ class GlowdomeRender {
     }
     
     public void setupFonts() {
-        font20 = loadFont("SourceCodePro-Regular-20.vlw");
-        font80 = loadFont("SourceCodePro-Regular-80.vlw");
+        font20 = loadFont("fonts/SourceCodePro-Regular-20.vlw");
+        font80 = loadFont("fonts/SourceCodePro-Regular-80.vlw");
     }
 
     public void stop() {
@@ -148,7 +152,7 @@ class GlowdomeRender {
      *   Create an array of image file names
      */
     private void loadImages() {
-        JSONArray values = loadJSONArray("images.json");
+        /*JSONArray values = loadJSONArray("images.json");
 
         imageFiles = new String[values.size()];
 
@@ -159,7 +163,22 @@ class GlowdomeRender {
             imageFiles[i] = images.getString("file");
 
             //println(file);
-        }
+        }*/
+        String path = sketchPath+"/data/"; 
+        imageFiles = listFiles(path);
+
+        
+    }
+
+    public File[] listFiles(String dir) {
+     File file = new File(dir);
+     if (file.isDirectory()) {
+       File[] files = file.listFiles();
+       return files;
+     } else {
+       // If it's not a directory
+       return null;
+     }
     }
 
     public void cycleImage() {
@@ -168,7 +187,7 @@ class GlowdomeRender {
         if (currentImageNum > imageFiles.length - 1) {
             currentImageNum = 0;
         }
-        sourceImage = loadImage(imageFiles[currentImageNum]);
+        sourceImage = loadImage(imageFiles[currentImageNum].getAbsolutePath());
         println(imageFiles[currentImageNum]);
     }
 
@@ -586,8 +605,6 @@ class GlowdomeRender {
         color c;
 
         if (testObserver.hasStrips) {
-            registry.startPushing();
-            registry.setAutoThrottle(true);
             int stripNum = 0;
             List<Strip> strips = registry.getStrips();
 
@@ -599,7 +616,7 @@ class GlowdomeRender {
                     yscale = height / stripLength;
 
                     for (int stripY = 0; stripY < stripLength; stripY++) {
-
+c  = 0;
                         // interlace the pixel between the strips
                         if (stripY % 2 == stripNum) {  // even led
                             c = get((int)imageTrace, stripY*yscale);
