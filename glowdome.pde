@@ -50,6 +50,12 @@ import java.util.*;
 
 import processing.serial.*;
 
+
+import processing.serial.*;
+ 
+String arduinoData = null;  
+int lf = 10;    // Linefeed in ASCII
+
 Kinect kinect;
 
 DeviceRegistry registry;
@@ -74,14 +80,16 @@ class TestObserver implements Observer {
 
 
 void setup() {
-    size(120, 120, P3D);
-    frameRate(60);
+    size(240, 240, P3D);
+    frameRate(0.0);
 
     sketch = new GlowdomeRender(this, useKinect, useLeap);
     sketch.setup();
 
     println(Serial.list());
-    rpmReader = new Serial(this, Serial.list()[0], 9600);
+    
+    if(Serial.list().length > 6)
+      rpmReader = new Serial(this, Serial.list()[Serial.list().length-1], 9600);
 }
 
 /*
@@ -90,7 +98,7 @@ void setup() {
  */
 void draw()  {
 
-    float speedIncrement = 0.2;
+    float speedIncrement = 0.001;
 
     if (keyPressed) {
 
@@ -168,11 +176,6 @@ void movieEvent(Movie m) {
     m.read();
 }
 
-void serialEvent(Serial port) {
-    int val = port.read();
-
-    println("raw input" + val);
-}
 
 void stop() {
     sketch.stop();
@@ -201,6 +204,23 @@ void leapOnSwipeGesture(SwipeGesture g, int state){
             break;
     }
 }
+
+
+
+void serialEvent(Serial rpmReader) {
+  arduinoData = rpmReader.readStringUntil(lf);
+  if (arduinoData != null) {
+    print(arduinoData);
+    String[] results = match(arduinoData, "\\d\\.\\d+");
+    if(results != null) {  
+      float f = Float.parseFloat(arduinoData);
+      println(f);
+      frameRate(f);
+    }
+  }
+}
+
+
 
 
 

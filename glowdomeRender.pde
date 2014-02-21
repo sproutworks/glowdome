@@ -152,22 +152,8 @@ class GlowdomeRender {
      *   Create an array of image file names
      */
     private void loadImages() {
-        /*JSONArray values = loadJSONArray("images.json");
-
-        imageFiles = new String[values.size()];
-
-        for (int i = 0; i < values.size(); i++) {
-
-            JSONObject images = values.getJSONObject(i);
-
-            imageFiles[i] = images.getString("file");
-
-            //println(file);
-        }*/
         String path = sketchPath+"/data/"; 
         imageFiles = listFiles(path);
-
-        
     }
 
     public File[] listFiles(String dir) {
